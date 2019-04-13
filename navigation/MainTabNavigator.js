@@ -92,12 +92,21 @@ const OrderScreenStack = createMaterialTopTabNavigator({
 );
 
 const OrderStack = createStackNavigator({
-    OrderScreenStack: OrderScreenStack
+    OrderScreenStack: OrderScreenStack,
+    Scanner: ScannerScreen
   },
   {
     navigationOptions : ({ navigation }) => { 
+      const qrscanner = <Ionicons
+        name={Platform.OS === "ios" ? "ios-qr-scanner" : "md-qr-scanner"}
+        color="#007AFF"
+        size={25}
+        style={{padding: 10 }}
+        onPress={() => navigation.navigate('Scanner')}
+      />
       return {
-        title: '訂單'
+        title: '訂單',
+        headerRight: qrscanner
       }
     }
   }
@@ -130,8 +139,7 @@ OrderStack.navigationOptions = ({ navigation }) => {
 
 // Settings Tab
 const SettingsStack = createStackNavigator({
-    Settings: SettingsScreen,
-    Scanner: ScannerScreen
+    Settings: SettingsScreen
   },
   {
     navigationOptions : ({ navigation }) => {

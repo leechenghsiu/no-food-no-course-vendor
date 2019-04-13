@@ -28,7 +28,8 @@ class ScannerScreen extends React.Component {
     saving: false,
     username: '',
     balance: '',
-    uid: ''
+    uid: '',
+    orderId: ''
   }
   
   async componentDidMount() {
@@ -71,11 +72,24 @@ class ScannerScreen extends React.Component {
   }
 
   handleBarCodeScanned = async ({ data }) => {
-    await this.setState({
-      username: JSON.parse(data).name,
-      balance: JSON.parse(data).balance - this.props.navigation.state.params.total,
-      uid: JSON.parse(data).uid
-    })
+    const { name, balance, uid, orderId } = JSON.parse(data);
+    // 判斷兩種情況
+    if(this.props.navigation.state.params) {
+      await this.setState({
+        username: name,
+        balance: balance - this.props.navigation.state.params.total,
+        uid: uid,
+        orderId: ''
+      },()=>console.log(this.state))
+    } else {
+      await this.setState({
+        username: name,
+        balance: '',
+        uid: uid,
+        orderId: orderId
+      },()=>console.log(this.state))
+    }
+    
     // 掃描後扣款
     this.handleBalance();
   }
@@ -83,9 +97,20 @@ class ScannerScreen extends React.Component {
   handleBalance = async () => {
     this.setState({ saving: true });
 
-    const { balance, uid } = this.state;
-    let dbUserid = await firebase.database().ref(`/users/${uid}`);
-    await dbUserid.update({ balance });
+    const { balance, uid, orderId } = this.state;
+    const { currentUser } = firebase.auth();
+    //掃到餐點改成完成
+    if(this.state.orderId!=='' && this.state.balance===''){
+      let dbOrderid = await firebase.database().ref(`/users/${uid}/order/${orderId}`);
+      let dbVendorid = await firebase.database().ref(`/vendors/${currentUser.uid}/order/${orderId}`);
+      await dbOrderid.update({ finish: true });
+      await dbVendorid.update({ finish: true });
+    } 
+    //掃到 QRCode 扣款
+    else if (this.state.orderId===''&& this.state.balance!=='') {
+      let dbUserid = await firebase.database().ref(`/users/${uid}`);
+      await dbUserid.update({ balance });
+    }
 
     this.setState({ saving: false }, ()=>this.props.navigation.navigate('Ordered'));
   }

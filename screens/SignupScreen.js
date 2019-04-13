@@ -13,6 +13,7 @@ class SignupScreen extends React.Component {
     password: null,
     phone: null,
     username: null,
+    description: null,
     opening: null,
     balance: 0,
     error: ' ',
@@ -21,7 +22,7 @@ class SignupScreen extends React.Component {
 
   onCatchUser = async () => {
     const { currentUser } = firebase.auth();
-    const { email, phone, username, opening, balance } = this.state;
+    const { email, phone, username, opening, balance, description } = this.state;
     let dbUserid = firebase.database().ref(`/vendors/${currentUser.uid}`);
     try {
       let snapshot = await dbUserid.once('value');
@@ -30,9 +31,10 @@ class SignupScreen extends React.Component {
       let opening = snapshot.val().opening;
       let phone = snapshot.val().phone;
       let balance = snapshot.val().balance;
-      this.setState({ username, email, opening, phone, balance });
+      let description = snapshot.val().description;
+      this.setState({ username, email, opening, phone, balance, description });
     } catch (err) { }
-    await dbUserid.set({ email, phone, username, opening, balance });
+    await dbUserid.set({ email, phone, username, opening, balance, description });
   }
 
   onCreateUser = async () => {
@@ -91,7 +93,7 @@ class SignupScreen extends React.Component {
             <InputBox
               label='學校信箱'
               errorMessage={this.state.error}
-              placeholder='s110419040@stu.ntue.edu.tw'
+              placeholder='vendor@vendor.com'
               autoCorrect={false}
               autoCapitalize='none'
               keyboardType='email-address'
@@ -111,40 +113,40 @@ class SignupScreen extends React.Component {
               leftIcon="lock"
             />
             <InputBox
-              label='使用者名稱'
+              label='店家名稱'
               errorMessage={this.state.error}
               autoCorrect={false}
-              placeholder='曾阿醜'
+              placeholder='曾記麻糬'
               value={this.state.username}
               onChangeText={username => this.setState({ username })}
               leftIcon="person"
             />
             <InputBox
-              label='手機'
+              label='店家簡介'
               errorMessage={this.state.error}
               autoCorrect={false}
-              placeholder='0952114289'
+              placeholder='正宗麻糬在此'
+              value={this.state.description}
+              onChangeText={description => this.setState({ description })}
+              leftIcon="book"
+            />
+            <InputBox
+              label='電話'
+              errorMessage={this.state.error}
+              autoCorrect={false}
+              placeholder='0223456789'
               value={this.state.phone}
               onChangeText={phone => this.setState({ phone })}
               leftIcon="phone-portrait"
             />
             <InputBox
-              label='學號'
+              label='營業時間'
               errorMessage={this.state.error}
               autoCorrect={false}
-              placeholder='110419004'
-              value={this.state.id}
-              onChangeText={id => this.setState({ id })}
-              leftIcon="school"
-            />
-            <InputBox
-              label='悠遊卡號碼'
-              errorMessage={this.state.error}
-              autoCorrect={false}
-              placeholder='1234567890'
-              value={this.state.cardId}
-              onChangeText={cardId => this.setState({ cardId })}
-              leftIcon="card"
+              placeholder='11:00~19:00'
+              value={this.state.opening}
+              onChangeText={opening => this.setState({ opening })}
+              leftIcon="clock"
             />
           {this.renderButton()}
           </KeyboardAwareScrollView>
