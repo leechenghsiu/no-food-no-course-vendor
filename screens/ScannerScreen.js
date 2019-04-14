@@ -5,24 +5,6 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as firebase from 'firebase';
 
 class ScannerScreen extends React.Component {
-  static navigationOptions = ({navigation}) => {
-    const back = <Ionicons
-      name={Platform.OS === "ios" ? "ios-arrow-back" : "md-arrow-back"}
-      color="#007AFF"
-      size={25}
-      style={{padding: 10 }}
-      onPress={() => navigation.goBack()}
-    />
-
-    return {
-      // headerTransparent: true,
-      title: 'QR Code 掃瞄器',
-      headerLeft: (
-        back
-      )
-    }
-  };
-
   state = {
     hasCameraPermission: null,
     saving: false,
@@ -40,6 +22,13 @@ class ScannerScreen extends React.Component {
   render() {
     const { hasCameraPermission } = this.state;
 
+    const close = <Ionicons
+      name={Platform.OS === "ios" ? "ios-close" : "md-close"}
+      color="#ffffff"
+      size={40}
+      onPress={() => this.props.navigation.goBack()}
+    />
+
     if (hasCameraPermission === null) {
       return <Text>Requesting for camera permission</Text>;
     }
@@ -48,7 +37,7 @@ class ScannerScreen extends React.Component {
     }
     if (this.state.saving) {
       return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: 'transparent', justifyContent:'center', alignItems: 'center' }}>
           <ActivityIndicator size='large' />
         </View>
       )
@@ -67,6 +56,7 @@ class ScannerScreen extends React.Component {
         </View>
         <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.7)' }}>
         </View>
+        <View style={{position: 'absolute', top: 30, left: 15}}>{close}</View>
       </View>
     );
   }
@@ -107,12 +97,12 @@ class ScannerScreen extends React.Component {
       await dbVendorid.update({ finish: true });
     } 
     //掃到 QRCode 扣款
-    else if (this.state.orderId===''&& this.state.balance!=='') {
+    else if (this.state.orderId==='' && this.state.balance!=='') {
       let dbUserid = await firebase.database().ref(`/users/${uid}`);
       await dbUserid.update({ balance });
     }
 
-    this.setState({ saving: false }, ()=>this.props.navigation.navigate('Ordered'));
+    this.setState({ saving: false }, ()=>{this.props.navigation.goBack(); this.props.navigation.navigate('Ordered')});
   }
 }
 

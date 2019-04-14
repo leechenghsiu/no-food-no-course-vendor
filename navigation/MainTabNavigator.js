@@ -3,7 +3,6 @@ import { Platform, Button } from 'react-native';
 import { createStackNavigator, createBottomTabNavigator, createMaterialTopTabNavigator } from 'react-navigation';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import HomeScreen from '../screens/HomeScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import ConfirmScreen from '../screens/ConfirmScreen';
 import OrderingScreen from '../screens/OrderingScreen';
@@ -12,12 +11,20 @@ import SettingsScreen from '../screens/SettingsScreen';
 import ScannerScreen from '../screens/ScannerScreen';
 
 // Home Page
-const HomeStack = createStackNavigator({
-  Home: HomeScreen,
+const HomeScreenStack = createStackNavigator({
   Details: DetailsScreen,
-  Confirm: ConfirmScreen,
-  Scanner: ScannerScreen
+  Confirm: ConfirmScreen
 });
+
+const HomeStack = createStackNavigator({
+  HomeScreen: HomeScreenStack,
+  Scanner: ScannerScreen
+},
+{
+  mode: 'modal',
+  headerMode: 'none'
+}
+);
 
 HomeStack.navigationOptions = ({ navigation }) => {
   let tabBarVisible = true;
@@ -27,7 +34,7 @@ HomeStack.navigationOptions = ({ navigation }) => {
   }
 
   return {
-    tabBarLabel: '店家',
+    tabBarLabel: '菜單',
     tabBarIcon: ({ focused, tintColor }) => (
       <Ionicons
         focused={focused}
@@ -43,7 +50,7 @@ HomeStack.navigationOptions = ({ navigation }) => {
     tabBarVisible,
     tabBarOnPress: ({ navigation, defaultHandler }) => {
       if(navigation.state.index > 0) {
-        navigation.navigate('Home')
+        navigation.navigate('HomeScreen')
       }
       defaultHandler();
     }
@@ -79,8 +86,7 @@ const OrderScreenStack = createMaterialTopTabNavigator({
             borderTopColor:'#fafafa',
             shadowOffset: { width: 0, height: 2 },
             shadowColor: 'rgba(0, 0, 0, .2)',
-            shadowOpacity: 0.5,
-
+            shadowOpacity: 0.5
           },
           indicatorStyle: {
             backgroundColor: 'black'
@@ -92,21 +98,12 @@ const OrderScreenStack = createMaterialTopTabNavigator({
 );
 
 const OrderStack = createStackNavigator({
-    OrderScreenStack: OrderScreenStack,
-    Scanner: ScannerScreen
+    OrderScreen: OrderScreenStack
   },
   {
     navigationOptions : ({ navigation }) => { 
-      const qrscanner = <Ionicons
-        name={Platform.OS === "ios" ? "ios-qr-scanner" : "md-qr-scanner"}
-        color="#007AFF"
-        size={25}
-        style={{padding: 10 }}
-        onPress={() => navigation.navigate('Scanner')}
-      />
       return {
-        title: '訂單',
-        headerRight: qrscanner
+        title: '訂單'
       }
     }
   }
@@ -138,7 +135,7 @@ OrderStack.navigationOptions = ({ navigation }) => {
 };
 
 // Settings Tab
-const SettingsStack = createStackNavigator({
+const SettingsScreenStack = createStackNavigator({
     Settings: SettingsScreen
   },
   {
@@ -148,6 +145,16 @@ const SettingsStack = createStackNavigator({
       }
     }
   }
+);
+
+const SettingsStack = createStackNavigator({
+  SettingsScreen: SettingsScreenStack,
+  Scanner: ScannerScreen
+},
+{
+  mode: 'modal',
+  headerMode: 'none'
+}
 );
 
 SettingsStack.navigationOptions = ({ navigation }) => {

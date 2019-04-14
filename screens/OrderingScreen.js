@@ -5,7 +5,7 @@ import { Button } from 'react-native-elements';
 
 class OrderingScreen extends React.Component {
   state = {
-    orders: null,
+    orders: [],
     loading: false,
     nothing: false
   }
@@ -43,13 +43,13 @@ class OrderingScreen extends React.Component {
   render() {
     if (this.state.loading){
       return (
-        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(249,249,249)'}}>
           <ActivityIndicator size='large' />
         </View>
       )
-    } else if (this.state.nothing) {
+    } else if (this.state.orders.filter(order=>order.finish===false).length<1 || this.state.nothing===true) {
         return (
-          <View style={{flex: 1, padding: 20}}>
+          <View style={{flex: 1, padding: 20, backgroundColor: 'rgb(249,249,249)'}}>
             <Text>目前沒有訂單</Text>
           </View>
         )
@@ -58,7 +58,7 @@ class OrderingScreen extends React.Component {
         const mealToArray = Object.values(order.meal);
         const renderMeal = mealToArray.map(meal=>(
           <View style={{ flex: 1, flexDirection: 'row', marginVertical: 5 }} key={meal.name}>
-            <View style={{ marginRight: 6, alignItems: 'flex-end', backgroundColor: 'rgb(141,216,227)', marginVertical: Platform.OS === "ios"?0:2, height: 16 , borderRadius: 2 }}>
+            <View style={{ marginRight: 6, alignItems: 'flex-end', backgroundColor: '#ff9e81', marginVertical: Platform.OS === "ios"?0:2, height: 16 , borderRadius: 2 }}>
               <Text style={[styles.mealCount, {lineHeight: Platform.OS === "ios"?16:17}]}>{meal.count}</Text>
             </View>
             <View style={{ flex: 5 }}>
@@ -72,7 +72,7 @@ class OrderingScreen extends React.Component {
         return(
           <View style={[styles.order, index===0?{marginTop: 20}:null ]} key={order.orderId}>
             <View style={styles.orderTop}>
-              <Text style={styles.vendor}>{`${order.vendor}`}</Text>
+              <Text style={styles.vendor}>{`${order.name}`}</Text>
               <View style={styles.timeBox}>
                 <Text style={[styles.time, {fontSize: 12}]}>取餐時間</Text>
                 <Text style={styles.time}>{`${order.time}`}</Text>
@@ -88,28 +88,11 @@ class OrderingScreen extends React.Component {
               </View>
             </View>
 
-            <View style={[styles.orderBottom, {}]}>
+            <View style={styles.orderBottom}>
               <Text style={styles.title}>備註</Text>
               <View style={styles.note}>
                 <Text style={{color: 'rgb(64,64,64)'}}>{`${order.note}`}</Text>
               </View>
-            </View>
-
-            <View style={styles.button}>
-              <Button
-                title="QR Code"
-                titleStyle={styles.orderButtonTitle}
-                buttonStyle={styles.orderButton}
-                containerStyle={styles.orderButtonBox}
-                onPress={()=>this.props.navigation.navigate('Qrcode', { orderId: order.orderId })}
-              />
-              <Button
-                title="取消訂單"
-                titleStyle={styles.orderButtonTitle}
-                buttonStyle={styles.orderButton}
-                containerStyle={styles.orderButtonBox}
-                onPress={()=>alert("敬請期待")}
-              />
             </View>
           </View>
         )
@@ -166,7 +149,7 @@ const styles = StyleSheet.create({
     width: 87,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgb(141,216,227)'
+    backgroundColor: '#ff9e81'
   },
   time: {
     fontSize: 24,
