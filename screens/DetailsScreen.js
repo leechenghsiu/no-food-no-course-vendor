@@ -1,32 +1,42 @@
 import React, { Component } from 'react';
-import { ScrollView, View, Text, Platform, StatusBar, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { Tile } from 'react-native-elements';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { SafeAreaView } from 'react-navigation';
+import { ScrollView, View, Text, Platform, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import * as firebase from 'firebase';
 
 class Details extends Component {
-  static navigationOptions = ({navigation}) => {
-    const back = <Ionicons
-      name={Platform.OS === "ios" ? "ios-arrow-back" : "md-arrow-back"}
-      color="#FFFFFF"
-      size={30}
-      style={{padding: 10 }}
-      onPress={() => navigation.goBack()}
-    />
-
-    return {
-      headerTransparent: true,
-      headerLeft: back
-    }
+  static navigationOptions = {
+    title: '菜單'
   };
 
   state = {
     meal:[],
-    total: 0
+    total: 0,
+    loading: false,
+    description: '',
+    image: '',
+    name: '',
+    meals:[]
+  }
+
+  async componentWillMount() {
+    this.setState({ loading: true });
+    const { currentUser } = firebase.auth();
+    let dbMenu = firebase.database().ref(`/vendors/${currentUser.uid}`);
+    
+    try {
+      let snapshot = await dbMenu.once('value');
+      let description = snapshot.val().description;
+      let image = snapshot.val().image;
+      let meals = snapshot.val().meals;
+      let username = snapshot.val().username;
+      
+      this.setState({ description, image, name: username, meals });
+    } catch (err) { }
+
+    this.setState({ loading: false });
   }
 
   handleSubmit = () => {
-    this.props.navigation.navigate('Confirm',{ meal: this.state.meal, name: this.props.navigation.state.params.name, total: this.state.total })
+    this.props.navigation.navigate('Confirm',{ meal: this.state.meal, name: this.state.name, total: this.state.total })
   }
 
   handleCount = () => {
@@ -47,7 +57,7 @@ class Details extends Component {
             image,
             description,
             meals
-    } = this.props.navigation.state.params;
+    } = this.state;
 
     const renderMeals = meals.map(meal=>{
       // 增加餐點
@@ -103,7 +113,7 @@ class Details extends Component {
       return(
         <View style={styles.meal} key={meal.name}>
           <View style={{flex: 1, flexDirection: 'row'}}>
-            <View style={[{ marginRight: 6, alignItems: 'flex-end', backgroundColor: 'rgb(141,216,227)', marginVertical: Platform.OS === "ios"?8:10, height: 16 , borderRadius: 2},this.state.meal.find(x => x.name === meal.name)?{display: 'flex'}:{backgroundColor: 'transparent'}]}>
+            <View style={[{ marginRight: 6, alignItems: 'flex-end', backgroundColor: '#ff9e81', marginVertical: Platform.OS === "ios"?8:10, height: 16 , borderRadius: 2},this.state.meal.find(x => x.name === meal.name)?{display: 'flex'}:{backgroundColor: 'transparent'}]}>
               <Text style={[styles.mealCount, {lineHeight: Platform.OS === "ios"?16:17}]}>{this.state.meal.find(x => x.name === meal.name)?this.state.meal.find(x => x.name === meal.name).count:''}</Text>
             </View>
             <View style={{flexDirection: 'column'}}>
@@ -122,16 +132,16 @@ class Details extends Component {
         </View>
       )
     })
-
-    return (
-      <SafeAreaView style={{flex: 1, backgroundColor: this.state.meal[0]?'rgb(141,216,227)':'rgb(249,249,249)'}} forceInset={{ top: 'never' }}>
+    if (this.state.loading){
+      return (
+        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(249,249,249)'}}>
+          <ActivityIndicator size='large' />
+        </View>
+      )
+    } else {
+      return (
         <View style={{ flex: 1 }}>
           <ScrollView style={{ backgroundColor: 'rgb(249,249,249)' }}>
-            <StatusBar backgroundColor="transparent" barStyle="light-content" />
-            <Tile
-              imageSrc={{ uri: image }}
-              featured
-            />
             <View style={ styles.container }>
               <Text style={styles.name}>{name}</Text>
               <Text style={styles.description}>{description}</Text>
@@ -149,8 +159,8 @@ class Details extends Component {
             </View>
             :null}
         </View>
-      </SafeAreaView>
-    );
+      );
+    }
   };
 }
 
@@ -172,7 +182,7 @@ const styles = StyleSheet.create({
     color: 'rgb(94,94,94)'
   },
   meal: {
-    height: 70,
+    minHeight: 70,
     width: '100%',
     flexDirection: 'row',
     borderBottomWidth: 1.5,
@@ -210,7 +220,7 @@ const styles = StyleSheet.create({
     fontWeight: '300'
   },
   buttonBox: {
-    backgroundColor: 'rgb(141,216,227)',
+    backgroundColor: '#ff9e81',
     width: '100%',
     height: 50,
     position: 'absolute',

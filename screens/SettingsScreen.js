@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Platform, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Platform, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as firebase from 'firebase';
+
+const { width } = Dimensions.get('window');
 
 class SettingsScreen extends React.Component {
   state = {
@@ -77,7 +79,7 @@ class SettingsScreen extends React.Component {
         <View style={styles.section}>
           <View style={styles.info}>
             <View style={{flex: 2}}>
-              <View style={{backgroundColor: 'rgb(141,216,227)', width:76, height: 76, borderRadius: 38, justifyContent: 'center', alignItems: 'center'}}>
+              <View style={{backgroundColor: '#ff9e81', width:76, height: 76, borderRadius: 38, justifyContent: 'center', alignItems: 'center'}}>
                 <Image source={require('../assets/images/avatar.png')} style={{width: 70, height: 70}}/>
               </View>
             </View>
@@ -90,6 +92,28 @@ class SettingsScreen extends React.Component {
               </TouchableOpacity>
             </View>
           </View>
+          <View style={styles.payList}>
+            <TouchableOpacity style={{flex: 1}} onPress={()=>this.props.navigation.navigate('Scanner')}>
+              <View style={styles.payListItem}>
+                <Image source={require('../assets/images/scanner.png')} style={{width: 60, height: 60}}/>
+                <Text style={styles.text}>掃描器</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={{flex: 1}}>
+              <View style={styles.payListItem}>
+                <Image source={require('../assets/images/promotion.png')} style={{width: 60, height: 60}}/>
+                <Text style={styles.text}>新增優惠</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={{flex: 1}}>
+              <View style={styles.payListItem}>
+                <Image source={require('../assets/images/voucher.png')} style={{width: 60, height: 60}}/>
+                <Text style={styles.text}>使用餐券</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.section}>
           <View style={styles.listItem}>
             <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
               {school}
@@ -108,7 +132,6 @@ class SettingsScreen extends React.Component {
               <Text style={styles.textContent}>{opening}</Text>
             </View>
           </View>
-          
         </View>
         <View style={styles.section}>
           <TouchableOpacity>
@@ -161,6 +184,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between'
+  },
+  payList: {
+    height: width/3,
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderColor: 'lightgrey'
+  },
+  payListItem: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 20,
+    borderRightWidth: 1,
+    borderColor: 'lightgrey'
   },
   text: {
     fontSize: 16,
