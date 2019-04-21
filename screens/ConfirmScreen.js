@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Platform, Text, StatusBar, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Image, DatePickerIOS, TimePickerAndroid } from 'react-native';
+import { View, Platform, Text, StatusBar, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
@@ -23,43 +23,13 @@ class ConfirmScreen extends React.Component {
     super(props);
     this.state = {
       saving: false,
-      chosenTime: new Date(),
-      hour: 12,
-      minute: `00`,
-      note: ''
-    }
-    this.setTime = this.setTime.bind(this);
-  }
-
-  state = {
-    balance: ''
-  }
-
-  setTime(newTime) {
-    const h = (newTime.getHours() < 10) ? `0${newTime.getHours()}` : newTime.getHours();
-    const m = (newTime.getMinutes() < 10) ? `0${newTime.getMinutes()}` : newTime.getMinutes();
-    this.setState({chosenTime: newTime, hour: h, minute: m});
-  }
-
-  setTimeAndroid = async () => {
-    try {
-      const {action, hour, minute} = await TimePickerAndroid.open({
-        hour: 12,
-        minute: 0,
-        is24Hour: false
-      });
-      if (action !== TimePickerAndroid.dismissedAction) {
-        const h = (hour < 10) ? `0${hour}` : hour;
-        const m = (minute < 10) ? `0${minute}` : minute;
-        this.setState({hour: h, minute: m});
-      }
-    } catch ({code, message}) {
-      console.warn('Cannot open time picker', message);
+      note: '',
+      balance: ''
     }
   }
 
   handleSubmit = () => {
-    this.props.navigation.navigate('Scanner', {total: this.props.navigation.state.params.total});
+    this.props.navigation.navigate('Scanner', {total: this.props.navigation.state.params.total, meal: this.props.navigation.state.params.meal, name: this.props.navigation.state.params.name});
   }
 
   renderButton() {

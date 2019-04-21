@@ -1,17 +1,23 @@
 import React from 'react';
-import { View, Platform, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { View, Platform, StyleSheet, Text, ActivityIndicator, Alert } from 'react-native';
 import { BarCodeScanner, Permissions } from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as firebase from 'firebase';
 
 class ScannerScreen extends React.Component {
-  state = {
-    hasCameraPermission: null,
-    saving: false,
-    username: '',
-    balance: '',
-    uid: '',
-    orderId: ''
+  constructor(props) {
+    super(props);
+    this.state= {
+      hasCameraPermission: null,
+      saving: false,
+      username: '',
+      balance: '',
+      uid: '',
+      orderId: '',
+      vendor: '',
+      hour: (new Date().getHours() < 10) ? `0${new Date().getHours()}` : new Date().getHours(),
+      minute: (new Date().getMinutes() < 10) ? `0${new Date().getMinutes()}` : new Date().getMinutes(),
+    }
   }
   
   async componentDidMount() {
@@ -87,7 +93,7 @@ class ScannerScreen extends React.Component {
   handleBalance = async () => {
     this.setState({ saving: true });
 
-    const { balance, uid, orderId } = this.state;
+    const { balance, uid, orderId, hour, minute } = this.state;
     const { currentUser } = firebase.auth();
     //掃到餐點改成完成
     if(this.state.orderId!=='' && this.state.balance===''){
@@ -95,14 +101,35 @@ class ScannerScreen extends React.Component {
       let dbVendorid = await firebase.database().ref(`/vendors/${currentUser.uid}/order/${orderId}`);
       await dbOrderid.update({ finish: true });
       await dbVendorid.update({ finish: true });
+      // Works on both iOS and Android
+      Alert.alert(
+        `${this.state.username}來取餐了`,
+        '',
+        [
+          {text: '確認', onPress: () => console.log('OK Pressed')},
+        ],
+        { cancelable: false }
+      )
+      this.setState({ saving: false });
     } 
     //掃到 QRCode 扣款
     else if (this.state.orderId==='' && this.state.balance!=='') {
-      let dbUserid = await firebase.database().ref(`/users/${uid}`);
-      await dbUserid.update({ balance });
+      const { currentUser } = firebase.auth();
+      const { meal, total, name } = this.props.navigation.state.params;
+      let dbBalance = await firebase.database().ref(`/users/${uid}`);
+      let dbVendor = firebase.database().ref(`/vendors/${currentUser.uid}/order`).push();
+      let dbUserid = firebase.database().ref(`/users/${uid}/order/${dbVendor.key}`);
+      
+      // 店家和 User 都要 push 訂單
+      await dbVendor.set({ meal: [...meal], time: `${hour}:${minute}`, note: '', total, vendor: `${name}`, finish: true, name: '現場：黑白Pay' });
+      await dbUserid.set({ meal: [...meal], time: `${hour}:${minute}`, note: '', total, vendor: `${name}`, finish: true, name: '現場：黑白Pay' });
+      
+      await dbBalance.update({ balance });
+      this.setState({ saving: false });
     }
 
-    this.setState({ saving: false }, ()=>{this.props.navigation.goBack(); this.props.navigation.navigate('Ordered')});
+    this.props.navigation.goBack();
+    this.props.navigation.navigate('Ordered');
   }
 }
 

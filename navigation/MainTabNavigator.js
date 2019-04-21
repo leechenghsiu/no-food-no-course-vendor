@@ -49,9 +49,7 @@ HomeStack.navigationOptions = ({ navigation }) => {
     },
     tabBarVisible,
     tabBarOnPress: ({ navigation, defaultHandler }) => {
-      if(navigation.state.index > 0) {
-        navigation.navigate('HomeScreen')
-      }
+      navigation.navigate('Details');
       defaultHandler();
     }
   }

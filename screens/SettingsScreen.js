@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Platform, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Platform, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as firebase from 'firebase';
 
@@ -76,83 +76,85 @@ class SettingsScreen extends React.Component {
 
     return (
       <View style={styles.container}>
-        <View style={styles.section}>
-          <View style={styles.info}>
-            <View style={{flex: 2}}>
-              <View style={{backgroundColor: '#ff9e81', width:76, height: 76, borderRadius: 38, justifyContent: 'center', alignItems: 'center'}}>
-                <Image source={require('../assets/images/avatar.png')} style={{width: 70, height: 70}}/>
+        <ScrollView>
+          <View style={styles.section}>
+            <View style={styles.info}>
+              <View style={{flex: 2}}>
+                <View style={{backgroundColor: '#ff9e81', width:76, height: 76, borderRadius: 38, justifyContent: 'center', alignItems: 'center'}}>
+                  <Image source={require('../assets/images/avatar.png')} style={{width: 70, height: 70}}/>
+                </View>
+              </View>
+              <View style={{flex: 5, justifyContent: 'space-around', height: '100%', paddingVertical: 30, paddingLeft: 20 }}>
+                <Text style={styles.text}>{username}</Text>
+              </View>
+              <View style={{flex: 1}}>
+                <TouchableOpacity onPress={()=>alert('還不能修改喔！')}>
+                  <Text style={[styles.text, {textAlign: 'right'}]}>修改</Text>
+                </TouchableOpacity>
               </View>
             </View>
-            <View style={{flex: 5, justifyContent: 'space-around', height: '100%', paddingVertical: 30, paddingLeft: 20 }}>
-              <Text style={styles.text}>{username}</Text>
-            </View>
-            <View style={{flex: 1}}>
-              <TouchableOpacity onPress={()=>alert('還不能修改喔！')}>
-                <Text style={[styles.text, {textAlign: 'right'}]}>修改</Text>
+            <View style={styles.payList}>
+              <TouchableOpacity style={{flex: 1}} onPress={()=>this.props.navigation.navigate('Scanner')}>
+                <View style={styles.payListItem}>
+                  <Image source={require('../assets/images/scanner.png')} style={{width: 50, height: 50, marginTop: 5}}/>
+                  <Text style={styles.text}>掃描器</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity style={{flex: 1}}>
+                <View style={styles.payListItem}>
+                  <Image source={require('../assets/images/promotion.png')} style={{width: 50, height: 50, marginTop: 5}}/>
+                  <Text style={styles.text}>新增優惠</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity style={{flex: 1}}>
+                <View style={styles.payListItem}>
+                  <Image source={require('../assets/images/voucher.png')} style={{width: 50, height: 50, marginTop: 5}}/>
+                  <Text style={styles.text}>使用餐券</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
-          <View style={styles.payList}>
-            <TouchableOpacity style={{flex: 1}} onPress={()=>this.props.navigation.navigate('Scanner')}>
-              <View style={styles.payListItem}>
-                <Image source={require('../assets/images/scanner.png')} style={{width: 60, height: 60}}/>
-                <Text style={styles.text}>掃描器</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity style={{flex: 1}}>
-              <View style={styles.payListItem}>
-                <Image source={require('../assets/images/promotion.png')} style={{width: 60, height: 60}}/>
-                <Text style={styles.text}>新增優惠</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity style={{flex: 1}}>
-              <View style={styles.payListItem}>
-                <Image source={require('../assets/images/voucher.png')} style={{width: 60, height: 60}}/>
-                <Text style={styles.text}>使用餐券</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={styles.section}>
-          <View style={styles.listItem}>
-            <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
-              {school}
-              <Text style={styles.text}>學校</Text>
-            </View>
-            <View style={{flex: 1}}>
-              <Text style={styles.textContent}>國立台北教育大學</Text>
-            </View>
-          </View>
-          <View style={styles.listItem}>
-            <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
-              {clock}
-              <Text style={styles.text}>營業時間</Text>
-            </View>
-            <View style={{flex: 1}}>
-              <Text style={styles.textContent}>{opening}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.section}>
-          <TouchableOpacity>
+          <View style={styles.section}>
             <View style={styles.listItem}>
               <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
-                {helpCircle}
-                <Text style={styles.text}>幫助</Text>
+                {school}
+                <Text style={styles.text}>學校</Text>
+              </View>
+              <View style={{flex: 1}}>
+                <Text style={styles.textContent}>國立台北教育大學</Text>
               </View>
             </View>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.section}>
-          <TouchableOpacity onPress={() => this.props.navigation.navigate('Auth')}>
             <View style={styles.listItem}>
               <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
-                {logOut}
-                <Text style={styles.text}>登出</Text>
+                {clock}
+                <Text style={styles.text}>營業時間</Text>
+              </View>
+              <View style={{flex: 1}}>
+                <Text style={styles.textContent}>{opening}</Text>
               </View>
             </View>
-          </TouchableOpacity>
-        </View>
+          </View>
+          <View style={styles.section}>
+            <TouchableOpacity>
+              <View style={styles.listItem}>
+                <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
+                  {helpCircle}
+                  <Text style={styles.text}>幫助</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.section}>
+            <TouchableOpacity onPress={() => this.props.navigation.navigate('Auth')}>
+              <View style={styles.listItem}>
+                <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
+                  {logOut}
+                  <Text style={styles.text}>登出</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     )
   }

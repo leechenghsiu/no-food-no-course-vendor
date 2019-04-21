@@ -17,6 +17,17 @@ class Details extends Component {
     meals:[]
   }
 
+  // Add Listener To Refresh
+  componentDidMount() {
+    this.subs = [
+      this.props.navigation.addListener('didFocus', () => this.setState({meal: []})),
+    ]; 
+  }
+
+  componentWillUnmount() {
+    this.subs.forEach(sub => sub.remove());
+  }
+
   async componentWillMount() {
     this.setState({ loading: true });
     const { currentUser } = firebase.auth();
