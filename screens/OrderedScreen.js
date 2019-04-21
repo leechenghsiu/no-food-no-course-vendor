@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Platform, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import * as firebase from 'firebase';
-import { Button } from 'react-native-elements';
 
 class OrderedScreen extends React.Component {
   state = {
@@ -41,13 +40,7 @@ class OrderedScreen extends React.Component {
   }
 
   render() {
-    if (this.state.loading){
-      return (
-        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(249,249,249)'}}>
-          <ActivityIndicator size='large' />
-        </View>
-      )
-    } else if (this.state.orders.filter(order=>order.finish===true).length<1 || this.state.nothing===true) {
+    if (this.state.orders.filter(order=>order.finish===true).length<1 || this.state.nothing===true) {
         return (
           <View style={{flex: 1, padding: 20, backgroundColor: 'rgb(249,249,249)'}}>
             <Text>目前沒有訂單</Text>
