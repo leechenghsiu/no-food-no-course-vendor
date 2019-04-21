@@ -156,7 +156,10 @@ class Details extends Component {
             <View style={ styles.container }>
               <Text style={styles.name}>{name}</Text>
               <Text style={styles.description}>{description}</Text>
-              <Text style={[styles.name, {marginBottom: 20}]}>餐點</Text>
+              <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+                <Text style={[styles.name, {marginBottom: 20}]}>餐點</Text>
+                <TouchableOpacity onPress={()=>this.setState({meal: []})} style={{ marginBottom: 20 }}><Text style={{ color: '#ff9e81', fontSize: 18 }}>清除</Text></TouchableOpacity>
+              </View>
               {renderMeals}
             </View>
           </ScrollView>
