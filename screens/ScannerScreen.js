@@ -16,7 +16,7 @@ class ScannerScreen extends React.Component {
       orderId: '',
       vendor: '',
       hour: (new Date().getHours() < 10) ? `0${new Date().getHours()}` : new Date().getHours(),
-      minute: (new Date().getMinutes() < 10) ? `0${new Date().getMinutes()}` : new Date().getMinutes(),
+      minute: (new Date().getMinutes() < 10) ? `0${new Date().getMinutes()}` : new Date().getMinutes()
     }
   }
   
