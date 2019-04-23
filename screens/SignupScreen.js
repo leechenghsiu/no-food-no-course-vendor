@@ -20,38 +20,25 @@ class SignupScreen extends React.Component {
     loading: false
   };
 
-  onCatchUser = async () => {
-    const { currentUser } = firebase.auth();
-    const { email, phone, username, opening, balance, description } = this.state;
-    let dbUserid = firebase.database().ref(`/vendors/${currentUser.uid}`);
-    try {
-      let snapshot = await dbUserid.once('value');
-      let username = snapshot.val().username;
-      let email = snapshot.val().email;
-      let opening = snapshot.val().opening;
-      let phone = snapshot.val().phone;
-      let balance = snapshot.val().balance;
-      let description = snapshot.val().description;
-      this.setState({ username, email, opening, phone, balance, description });
-    } catch (err) { }
-    await dbUserid.set({ email, phone, username, opening, balance, description });
-  }
-
   onCreateUser = async () => {
-    const { email, password } = this.state;
     this.setState({ error: ' ', loading: true });
+    const { email, password, phone, username, opening, balance, description } = this.state;
     try {
       await firebase.auth().createUserWithEmailAndPassword(email, password);
-      // firebase db start write
-      this.onCatchUser();
-      // firebase db end write
-      this.setState({email: '', password: '', loading: false});
-      this.props.navigation.navigate('Main');
+      const { currentUser } = firebase.auth();
+      let dbUserid = firebase.database().ref(`/vendors/${currentUser.uid}`);
+      this.setState({ username, email, phone, opening, balance, description },()=>firebase.auth().signInWithEmailAndPassword(email, password));
+      if(username!==null&&opening!==null&&phone!==null) {
+        await dbUserid.set({ email, phone, username, opening, balance, description });
+        this.setState({email: '', password: '', loading: false});
+        this.props.navigation.navigate('Main');
+      } else throw err
+
     } catch (err) {
       this.setState({
         email: '',
         password: '',
-        error: err.message,
+        error: 'Error!',
         loading: false
       });
     }

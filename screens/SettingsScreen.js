@@ -145,7 +145,7 @@ class SettingsScreen extends React.Component {
             </TouchableOpacity>
           </View>
           <View style={styles.section}>
-            <TouchableOpacity onPress={() => this.props.navigation.navigate('Auth')}>
+            <TouchableOpacity onPress={() => {firebase.auth().signOut(); this.props.navigation.navigate('Auth')}}>
               <View style={styles.listItem}>
                 <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
                   {logOut}

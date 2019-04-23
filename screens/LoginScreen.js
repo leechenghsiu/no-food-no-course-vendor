@@ -1,9 +1,7 @@
 import React, { Component } from 'react';
-import { View, Platform, Text, ActivityIndicator, Image } from 'react-native';
-import { Asset } from 'expo';
+import { View, Text, ActivityIndicator, Image } from 'react-native';
 import { Button } from 'react-native-elements';
 import * as firebase from 'firebase';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import InputBox from '../components/InputBox';
 
@@ -26,7 +24,7 @@ class LoginScreen extends Component {
       this.setState({
         email: '',
         password: '',
-        error: 'Syntax Error!',
+        error: 'Error!',
         loading: false
       });
     }
