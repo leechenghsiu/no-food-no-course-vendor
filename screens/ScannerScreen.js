@@ -1,8 +1,11 @@
 import React from 'react';
-import { View, Platform, StyleSheet, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, Platform, StyleSheet, Text, ActivityIndicator, Alert, AsyncStorage } from 'react-native';
 import { BarCodeScanner, Permissions } from 'expo';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as firebase from 'firebase';
+
+import api from '../api';
+import deviceStorage from '../services/deviceStorage';
 
 class ScannerScreen extends React.Component {
   constructor(props) {
@@ -69,7 +72,7 @@ class ScannerScreen extends React.Component {
 
   handleBarCodeScanned = async ({ data }) => {
     const { name, balance, uid, orderId } = JSON.parse(data);
-    // 判斷兩種情況
+    // POS機傳來的
     if(this.props.navigation.state.params) {
       await this.setState({
         username: name,
@@ -77,7 +80,9 @@ class ScannerScreen extends React.Component {
         uid: uid,
         orderId: ''
       },()=>console.log(this.state))
-    } else {
+    } 
+    // 取餐掃描
+    else {
       await this.setState({
         username: name,
         balance: '',
@@ -93,17 +98,27 @@ class ScannerScreen extends React.Component {
   handleBalance = async () => {
     this.setState({ saving: true });
 
-    const { balance, uid, orderId, hour, minute } = this.state;
-    const { currentUser } = firebase.auth();
+    const { balance, uid, orderId, hour, minute, username } = this.state;
+    // const { currentUser } = firebase.auth();
     //掃到餐點改成完成
     if(this.state.orderId!=='' && this.state.balance===''){
-      let dbOrderid = await firebase.database().ref(`/users/${uid}/order/${orderId}`);
-      let dbVendorid = await firebase.database().ref(`/vendors/${currentUser.uid}/order/${orderId}`);
-      await dbOrderid.update({ finish: true });
-      await dbVendorid.update({ finish: true });
+      // let dbOrderid = await firebase.database().ref(`/users/${uid}/order/${orderId}`);
+      // let dbVendorid = await firebase.database().ref(`/vendors/${currentUser.uid}/order/${orderId}`);
+      // await dbOrderid.update({ finish: true });
+      // await dbVendorid.update({ finish: true });
       // Works on both iOS and Android
+      await api.patch(`orders/${orderId}`, [
+        {"propName": "status", "value": "true"}
+       ])
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+      
       Alert.alert(
-        `${this.state.username}來取餐了`,
+        `${username}來取餐了`,
         '',
         [
           {text: '確認', onPress: () => console.log('OK Pressed')},
@@ -114,17 +129,49 @@ class ScannerScreen extends React.Component {
     } 
     //掃到 QRCode 扣款
     else if (this.state.orderId==='' && this.state.balance!=='') {
-      const { currentUser } = firebase.auth();
-      const { meal, total, name } = this.props.navigation.state.params;
-      let dbBalance = await firebase.database().ref(`/users/${uid}`);
-      let dbVendor = firebase.database().ref(`/vendors/${currentUser.uid}/order`).push();
-      let dbUserid = firebase.database().ref(`/users/${uid}/order/${dbVendor.key}`);
+      // const { currentUser } = firebase.auth();
+      const vendorId = await AsyncStorage.getItem('_id');
+      const { meal, total, name, orderLength, remark } = this.props.navigation.state.params;
+      // let dbBalance = await firebase.database().ref(`/users/${uid}`);
+      // let dbVendor = firebase.database().ref(`/vendors/${currentUser.uid}/order`).push();
+      // let dbUserid = firebase.database().ref(`/users/${uid}/order/${dbVendor.key}`);
       
-      // 店家和 User 都要 push 訂單
-      await dbVendor.set({ meal: [...meal], time: `${hour}:${minute}`, note: '', total, vendor: `${name}`, finish: true, name: '現場：黑白Pay' });
-      await dbUserid.set({ meal: [...meal], time: `${hour}:${minute}`, note: '', total, vendor: `${name}`, finish: true, name: '現場：黑白Pay' });
+      // // 店家和 User 都要 push 訂單
+      // await dbVendor.set({ meal: [...meal], time: `${hour}:${minute}`, note: '', total, vendor: `${name}`, finish: true, name: '現場：黑白Pay' });
+      // await dbUserid.set({ meal: [...meal], time: `${hour}:${minute}`, note: '', total, vendor: `${name}`, finish: true, name: '現場：黑白Pay' });
       
-      await dbBalance.update({ balance });
+      // await dbBalance.update({ balance });
+      // 下訂單
+      await api.post('orders', {
+        list: [...meal],
+        hour,
+        minute,
+        total,
+        remark,
+        orderNumber: orderLength,
+        status: true,
+        vendor: { vendorId, vendorname: name },
+        user: { userId: vendorId, username: `現場：${username}` }
+      })
+      .then((response) => {
+        console.log(response);
+        console.log('Success');
+      })
+      .catch((error) => {
+        console.log(error);
+        console.log('error');
+      });
+
+      await api.patch(`user/${uid}`, [
+        {"propName": "balance", "value": balance}
+       ])
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
       this.setState({ saving: false });
     }
 

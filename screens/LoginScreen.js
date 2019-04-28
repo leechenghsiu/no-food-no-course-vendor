@@ -2,8 +2,10 @@ import React, { Component } from 'react';
 import { View, Text, ActivityIndicator, Image } from 'react-native';
 import { Button } from 'react-native-elements';
 import * as firebase from 'firebase';
+import api from '../api'
 
 import InputBox from '../components/InputBox';
+import deviceStorage from '../services/deviceStorage';
 
 class LoginScreen extends Component {
   state = {
@@ -17,9 +19,22 @@ class LoginScreen extends Component {
     const { email, password } = this.state;
     this.setState({ error: ' ', loading: true });
     try {
-      await firebase.auth().signInWithEmailAndPassword(email, password);
-      this.setState({email: '', password: '', loading: false});
-      this.props.navigation.navigate('Main');
+      // await firebase.auth().signInWithEmailAndPassword(email, password);
+      await api.post('vendor/login', {
+        email, password
+      })
+      .then((response) => {
+        console.log('Login Success');
+        deviceStorage.saveToken("id_token", response.data.token);
+        deviceStorage.saveToken("_id", response.data.user._id);
+
+        this.setState({email: '', password: '', loading: false});
+        this.props.navigation.navigate('Main');
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+      
     } catch (err) {
       this.setState({
         email: '',

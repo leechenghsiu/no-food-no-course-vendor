@@ -1,8 +1,11 @@
 import React from 'react';
-import { View, Platform, Text, StatusBar, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Platform, Text, StatusBar, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, AsyncStorage, TextInput } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as firebase from 'firebase';
+
+import api from '../api';
+import deviceStorage from '../services/deviceStorage';
 
 class ConfirmScreen extends React.Component {
   static navigationOptions = ({navigation}) => {
@@ -23,6 +26,7 @@ class ConfirmScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      orderLength: '',
       saving: false,
       note: '',
       balance: '',
@@ -32,26 +36,79 @@ class ConfirmScreen extends React.Component {
     }
   }
 
+  async componentWillMount() {
+    const userId = await AsyncStorage.getItem('_id');
+    try {
+      await api.get(`orders/vendor/${userId}`)
+      .then((response) => {
+        console.log('Find Order');
+        // 現場編號
+        const orderLength = response.data.order.length % 100 + 1;
+        if(orderLength < 10) {
+          this.setState({ orderLength: `00${orderLength}` },()=>console.log(this.state.orderLength));
+        } else if (orderLength >= 10 && orderLength < 100) {
+          this.setState({ orderLength: `0${orderLength}` },()=>console.log(this.state.orderLength));
+        } else if (orderLength === 100) {
+          this.setState({ orderLength },()=>console.log(this.state.orderLength));
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+    } catch (err) { }
+  }
+
   handlePress = type => {
     type === 'cash' ? this.setState({payment: 'cash'}) : this.setState({payment: 'card'})
   }
 
   handleSubmit = async () => {
-    this.state.payment==='card'
-    ? this.props.navigation.navigate('Scanner', {total: this.props.navigation.state.params.total, meal: this.props.navigation.state.params.meal, name: this.props.navigation.state.params.name})
-    : this.setState({ saving: true });
+    if(this.state.payment==='card'){
+      this.props.navigation.navigate('Scanner', {
+        total: this.props.navigation.state.params.total,
+        meal: this.props.navigation.state.params.meal,
+        name: this.props.navigation.state.params.name,
+        orderLength: this.state.orderLength,
+        remark: this.state.note
+      })
+    } else {
+      this.setState({ saving: true });
 
-      const { currentUser } = firebase.auth();
+      // const { currentUser } = firebase.auth();
       const { meal, total, name } = this.props.navigation.state.params;
-      const { hour, minute } = this.state;
-      let dbVendor = firebase.database().ref(`/vendors/${currentUser.uid}/order`).push();
+      const { hour, minute, orderLength, note } = this.state;
+      const vendorId = await AsyncStorage.getItem('_id');
+      // let dbVendor = firebase.database().ref(`/vendors/${currentUser.uid}/order`).push();
       
-      // push 訂單到店家
-      await dbVendor.set({ meal: [...meal], time: `${hour}:${minute}`, note: '', total, vendor: `${name}`, finish: true, name: '現場：現金' });
+      // // push 訂單到店家
+      // await dbVendor.set({ meal: [...meal], time: `${hour}:${minute}`, note: '', total, vendor: `${name}`, finish: true, name: '現場：現金' });
       
-      this.setState({ saving: false });
+      // 下訂單
+      await api.post('orders', {
+        list: [...meal],
+        hour,
+        minute,
+        total,
+        remark: note,
+        orderNumber: orderLength,
+        status: true,
+        vendor: { vendorId, vendorname: name },
+        user: { userId: vendorId, username: '現場：現金' }
+      })
+      .then((response) => {
+        console.log(response);
+        // this.setState({ meals: [...response.data] });
+        // console.log(this.state.meals)
+      })
+      .catch((error) => {
+        console.log(error);
+        console.log('error');
+      });
 
+      this.setState({ saving: false });
       this.props.navigation.navigate('Ordered');
+    }
   }
 
   renderButton() {
@@ -77,12 +134,12 @@ class ConfirmScreen extends React.Component {
     const { meal, name, total } = this.props.navigation.state.params;
     
     const renderMeal = meal.map(meal=>(
-      <View style={{ flex: 1, flexDirection: 'row', marginVertical: 5 }} key={meal.name}>
+      <View style={{ flex: 1, flexDirection: 'row', marginVertical: 5 }} key={meal.product}>
         <View style={{ marginRight: 6, alignItems: 'flex-end', backgroundColor: '#ff9e81', marginVertical: Platform.OS === "ios"?0:2, height: 16 , borderRadius: 2 }}>
-          <Text style={[styles.mealCount, {lineHeight: Platform.OS === "ios"?16:17}]}>{meal.count}</Text>
+          <Text style={[styles.mealCount, {lineHeight: Platform.OS === "ios"?16:17}]}>{meal.quantity}</Text>
         </View>
         <View style={{ flex: 5 }}>
-          <Text style={styles.mealName}>{meal.name}</Text>
+          <Text style={styles.mealName}>{meal.product}</Text>
         </View>
         <View style={{ flex: 2 }}>
           <Text style={styles.mealPrice}>{`NT$ ${meal.price}`}</Text>
@@ -113,10 +170,18 @@ class ConfirmScreen extends React.Component {
               <View style={styles.box}>
                 <Text style={styles.boxTitle}>付款方式</Text>
                 <View style={{flexDirection: 'row', justifyContent: 'space-around', paddingTop: 20}}>
-                  <Text style={{fontSize: 20, color: this.state.payment==='cash'?'black':'lightgrey'}} onPress={()=>this.handlePress('cash')}>現金</Text>
                   <Text style={{fontSize: 20, color: this.state.payment==='card'?'black':'lightgrey'}} onPress={()=>this.handlePress('card')}>悠遊卡</Text>
+                  <Text style={{fontSize: 20, color: this.state.payment==='cash'?'black':'lightgrey'}} onPress={()=>this.handlePress('cash')}>現金</Text>
                 </View>
               </View>
+              <View style={[styles.box, {borderBottomWidth: 0, height: 200}]}>
+                  <Text style={styles.boxTitle}>備註</Text>
+                  <TextInput
+                    style={styles.addNote}
+                    autoCorrect={false}
+                    onChangeText={note => this.setState({note})}
+                  />
+                </View>
             </View>
           </KeyboardAwareScrollView>
         </ScrollView>      
