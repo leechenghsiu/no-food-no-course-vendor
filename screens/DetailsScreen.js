@@ -1,9 +1,12 @@
 import React, { Component } from 'react';
-import { ScrollView, View, Text, Platform, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { ScrollView, View, Text, Platform, StyleSheet, TouchableOpacity, ActivityIndicator, AsyncStorage } from 'react-native';
 import * as firebase from 'firebase';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Input, Button } from 'react-native-elements';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+
+import api from '../api';
+import deviceStorage from '../services/deviceStorage';
 
 class Details extends Component {
   static navigationOptions = ({navigation}) => {
@@ -44,17 +47,40 @@ class Details extends Component {
 
   async componentWillMount() {
     this.setState({ loading: true });
-    const { currentUser } = firebase.auth();
-    let dbMenu = firebase.database().ref(`/vendors/${currentUser.uid}`);
+    const userId = await AsyncStorage.getItem('_id');
+    // const { currentUser } = firebase.auth();
+    // let dbMenu = firebase.database().ref(`/vendors/${currentUser.uid}`);
     
     try {
-      let snapshot = await dbMenu.once('value');
-      let description = snapshot.val().description;
-      let meals = snapshot.val().meals;
-      let username = snapshot.val().username;
+      // let snapshot = await dbMenu.once('value');
+      // let description = snapshot.val().description;
+      // let meals = snapshot.val().meals;
+      // let username = snapshot.val().username;
+
+      // 抓 店名、簡介
+      await api.get(`vendor/${userId}`)
+      .then((response) => {
+        console.log(response.data.user);
+        
+        const { description, vendorname } = response.data.user;
+        this.setState({ description, name: vendorname });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+      // 抓 菜單
+      await api.get(`products/${userId}`)
+      .then((response) => {
+        console.log(response.data);
+        
+        this.setState({ meals: response.data });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
       
-      this.setState({ description, name: username, meals });
-    } catch (err) { }
+      // this.setState({ description, name: username, meals });
+    } catch (error) { console.log(error) }
 
     this.setState({ loading: false });
   }
@@ -62,19 +88,34 @@ class Details extends Component {
   handleAddNew = async () => {
     await this.setState({
       loading: true,
-      meals: this.state.meals!==undefined
-      ? [ ...this.state.meals,
-        { name: this.state.newMealName, price: this.state.newMealPrice }]
-      : [{ name: this.state.newMealName, price: this.state.newMealPrice }]
+      // meals: this.state.meals!==undefined
+      // ? [ ...this.state.meals,
+      //   { name: this.state.newMealName, price: this.state.newMealPrice }]
+      // : [{ name: this.state.newMealName, price: this.state.newMealPrice }]
     });
-    const { currentUser } = firebase.auth();
-    let dbMenu = firebase.database().ref(`/vendors/${currentUser.uid}`);
-    await dbMenu.update({ meals: [...this.state.meals] });
     
-    this.setState({ loading: false, newMealName: '', newMealPrice: '' }, ()=>console.log(this.state.meals));
+    const vendorId = await AsyncStorage.getItem('_id');
+    const { newMealName, newMealPrice, name } = this.state;
+    try {
+      await api.post('products', {
+        name: newMealName,
+        price: newMealPrice,
+        vendor: { vendorId, vendorname: name }
+      })
+      .then((response) => {
+        console.log('Add Success');
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+      this.setState({ loading: false, newMealName: '', newMealPrice: '' }, () => this.componentWillMount());
+
+    } catch(error) { console.log(error) }
   }
 
   handleSubmit = () => {
+    console.log(this.state.meal);
     this.props.navigation.navigate('Confirm',{ meal: this.state.meal, name: this.state.name, total: this.state.total })
   }
 
@@ -84,7 +125,7 @@ class Details extends Component {
         total: 0
       })
     } else {
-      const sum = this.state.meal.map(x => x.price * x.count).reduce((a,b) => a+b);
+      const sum = this.state.meal.map(x => x.price * x.quantity).reduce((a,b) => a+b);
       this.setState({
         total: sum
       })
@@ -140,8 +181,8 @@ class Details extends Component {
     } else if (this.state.meals===undefined) {
       return (
         <View style={{ flex: 1 }}>
+        <ScrollView style={{ backgroundColor: 'rgb(249,249,249)' }}>
         <KeyboardAwareScrollView>
-          <ScrollView style={{ backgroundColor: 'rgb(249,249,249)' }}>
             <View style={ styles.container }>
               <Text style={styles.name}>{name}</Text>
               <Text style={styles.description}>{description}</Text>
@@ -151,8 +192,8 @@ class Details extends Component {
               <Text style={styles.description}>目前沒有菜單</Text>
               {this.renderInput()}
             </View>
+            </KeyboardAwareScrollView>
           </ScrollView>
-        </KeyboardAwareScrollView>
         </View>
       );
     } else {
@@ -160,9 +201,9 @@ class Details extends Component {
         // 增加餐點
         const handleIncreaseMeal = meal => {
           //找到現有的餐點
-          if(this.state.meal.find(x => x.name === meal.name)){
+          if(this.state.meal.find(x => x.product === meal.name)){
             let oldStates = this.state.meal;
-            oldStates.find(x => x.name === meal.name).count += 1;
+            oldStates.find(x => x.product === meal.name).quantity += 1;
             this.setState({
               meal: [
                 ...oldStates
@@ -174,7 +215,7 @@ class Details extends Component {
             this.setState({
               meal: [
                 ...this.state.meal,
-                { name: meal.name, price: meal.price, count: 1 }
+                { product: meal.name, price: meal.price, quantity: 1 }
               ]
             },()=>this.handleCount())
           }
@@ -182,17 +223,17 @@ class Details extends Component {
         // 減少餐點
         const handleDecreaseMeal = meal => {
           //找到現有的餐點
-          if(this.state.meal.find(x => x.name === meal.name)){
+          if(this.state.meal.find(x => x.product === meal.name)){
             let oldStates = this.state.meal;
-            if(oldStates.find(x => x.name === meal.name).count === 1){
-              oldStates.splice(oldStates.findIndex(x => x.name === meal.name),1)
+            if(oldStates.find(x => x.product === meal.name).quantity === 1){
+              oldStates.splice(oldStates.findIndex(x => x.product === meal.name),1)
               this.setState({
                 meal: [
                   ...oldStates
                 ]
               },()=>this.handleCount());
             } else {
-              oldStates.find(x => x.name === meal.name).count -= 1;
+              oldStates.find(x => x.product === meal.name).quantity -= 1;
               this.setState({
                 meal: [
                   ...oldStates
@@ -208,8 +249,8 @@ class Details extends Component {
         return(
           <View style={styles.meal} key={meal.name}>
             <View style={{flex: 1, flexDirection: 'row'}}>
-              <View style={[{ marginRight: 6, alignItems: 'flex-end', backgroundColor: '#ff9e81', marginVertical: Platform.OS === "ios"?8:10, height: 16 , borderRadius: 2},this.state.meal.find(x => x.name === meal.name)?{display: 'flex'}:{backgroundColor: 'transparent'}]}>
-                <Text style={[styles.mealCount, {lineHeight: Platform.OS === "ios"?16:17}]}>{this.state.meal.find(x => x.name === meal.name)?this.state.meal.find(x => x.name === meal.name).count:''}</Text>
+              <View style={[{ marginRight: 6, alignItems: 'flex-end', backgroundColor: '#ff9e81', marginVertical: Platform.OS === "ios"?8:10, height: 16 , borderRadius: 2},this.state.meal.find(x => x.product === meal.name)?{display: 'flex'}:{backgroundColor: 'transparent'}]}>
+                <Text style={[styles.mealCount, {lineHeight: Platform.OS === "ios"?16:17}]}>{this.state.meal.find(x => x.product === meal.name)?this.state.meal.find(x => x.product === meal.name).quantity:''}</Text>
               </View>
               <View style={{flexDirection: 'column'}}>
                 <Text style={styles.mealName}>{meal.name}</Text>

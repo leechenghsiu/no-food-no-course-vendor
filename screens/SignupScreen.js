@@ -5,7 +5,11 @@ import * as firebase from 'firebase';
 import { SafeAreaView } from 'react-navigation';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
+import api from '../api';
+import axios from 'axios';
+
 import InputBox from '../components/InputBox';
+import deviceStorage from '../services/deviceStorage';
 
 class SignupScreen extends React.Component {
   state = {
@@ -24,14 +28,41 @@ class SignupScreen extends React.Component {
     this.setState({ error: ' ', loading: true });
     const { email, password, phone, username, opening, balance, description } = this.state;
     try {
-      await firebase.auth().createUserWithEmailAndPassword(email, password);
-      const { currentUser } = firebase.auth();
-      let dbUserid = firebase.database().ref(`/vendors/${currentUser.uid}`);
-      this.setState({ username, email, phone, opening, balance, description },()=>firebase.auth().signInWithEmailAndPassword(email, password));
-      if(username!==null&&opening!==null&&phone!==null) {
-        await dbUserid.set({ email, phone, username, opening, balance, description });
-        this.setState({email: '', password: '', loading: false});
-        this.props.navigation.navigate('Main');
+      // await firebase.auth().createUserWithEmailAndPassword(email, password);
+      await this.setState({ username, email, phone, balance, password, opening, description });
+
+      // const { currentUser } = firebase.auth();
+      // let dbUserid = firebase.database().ref(`/vendors/${currentUser.uid}`);
+      // this.setState({ username, email, phone, opening, balance, description },()=>firebase.auth().signInWithEmailAndPassword(email, password));
+      if(username!==null&&opening!==null&&phone!==null&&description!==null) {
+        // await dbUserid.set({ email, phone, username, opening, balance, description });
+        
+        // 註冊(Axios 不能傳 form data !!!)
+        await api.post('vendor/signup', {
+          email, password, phone, opening, vendorname: username, description
+        })
+        .then((response) => {
+          console.log('Signup Success');
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+        // 登入
+        await api.post('vendor/login', {
+          email, password
+        })
+        .then((response) => {
+          console.log('Login Success');
+          deviceStorage.saveToken("id_token", response.data.token);
+          deviceStorage.saveToken("_id", response.data.user._id);
+
+          this.setState({email: '', password: '', loading: false});
+          this.props.navigation.navigate('Main');
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+
       } else throw err
 
     } catch (err) {

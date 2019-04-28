@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Platform, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+import { View, Platform, Text, StyleSheet, Image, TouchableOpacity, Dimensions, ScrollView, AsyncStorage } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as firebase from 'firebase';
+
+import api from '../api';
+import deviceStorage from '../services/deviceStorage';
 
 const { width } = Dimensions.get('window');
 
@@ -26,17 +29,29 @@ class SettingsScreen extends React.Component {
   }
 
   async componentWillMount() {
-    const { currentUser } = firebase.auth();
-    let dbUserid = firebase.database().ref(`/vendors/${currentUser.uid}`);
+    const userId = await AsyncStorage.getItem('_id');
+    // const { currentUser } = firebase.auth();
+    // let dbUserid = firebase.database().ref(`/vendors/${currentUser.uid}`);
     try {
-      let snapshot = await dbUserid.once('value');
-      let username = snapshot.val().username;
-      let email = snapshot.val().email;
-      let phone = snapshot.val().phone;
-      let opening = snapshot.val().opening;
-      let balance = snapshot.val().balance;
-      this.setState({ username, email, phone, opening, balance });
-    } catch (err) { }
+      // let snapshot = await dbUserid.once('value');
+      // let username = snapshot.val().username;
+      // let email = snapshot.val().email;
+      // let phone = snapshot.val().phone;
+      // let opening = snapshot.val().opening;
+      // let balance = snapshot.val().balance;
+      // this.setState({ username, email, phone, opening, balance });
+      await api.get(`vendor/${userId}`)
+      .then((response) => {
+        console.log(response.data.user);
+        // 缺學號
+        const { vendorname, email, opening } = response.data.user;
+        this.setState({ username: vendorname, email, opening });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+      
+    } catch (err) { console.log(err) }
   }
 
   render() {
@@ -145,7 +160,10 @@ class SettingsScreen extends React.Component {
             </TouchableOpacity>
           </View>
           <View style={styles.section}>
-            <TouchableOpacity onPress={() => {firebase.auth().signOut(); this.props.navigation.navigate('Auth')}}>
+            <TouchableOpacity onPress={() => {
+              deviceStorage.deleteToken();
+              this.props.navigation.navigate('Auth')
+            }}>
               <View style={styles.listItem}>
                 <View style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
                   {logOut}
