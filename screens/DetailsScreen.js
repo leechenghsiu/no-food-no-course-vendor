@@ -122,6 +122,7 @@ class Details extends Component {
       }
     })
     .then((response) => {
+      console.log('Token Pushed');
       console.log(response.data);
     })
     .catch((error) => {
