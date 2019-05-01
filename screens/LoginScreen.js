@@ -46,6 +46,16 @@ class LoginScreen extends Component {
   }
 
   renderButton() {
+    const vendorArr = [
+      { name: '雲南小廚', email: 'vendor@vendor.com', password: 'vendor' },
+      { name: '品客', email: 'vendor2@vendor2.com', password: 'vendor2' },
+      { name: '登南派吃守', email: 'vendor3@vendor3.com', password: 'vendor3' },
+      { name: '麒耀坊', email: 'vendor4@vendor4.com', password: 'vendor4' },
+      { name: '蘋果小屋', email: 'vendor5@vendor5.com', password: 'vendor5' },
+      { name: '自助餐', email: 'vendor6@vendor6.com', password: 'vendor6' },
+      { name: '呆熊', email: 'vendor7@vendor7.com', password: 'vendor7' }
+    ];
+
     if (this.state.loading) {
       return <ActivityIndicator size='large' style={{ marginTop: 30 }} />;
     }
@@ -71,14 +81,21 @@ class LoginScreen extends Component {
             onPress={()=>this.props.navigation.navigate('Signup')}
           />
         </View>
-        <Button
-          title="超級登入"
-          type="clear"
-          titleStyle={styles.signupButtonTitle}
-          buttonStyle={styles.signupButton}
-          containerStyle={[styles.signupButtonBox, {marginTop: 100}]}
-          onPress={() => this.props.navigation.navigate('Main')}
-        />
+        <View style={{flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 20}}>
+          {vendorArr.map(vendor => {
+            return (
+              <Button
+                key={vendor.name}
+                title={vendor.name}
+                type="clear"
+                titleStyle={styles.signupButtonTitle}
+                buttonStyle={styles.signupButton}
+                containerStyle={[styles.signupButtonBox, { marginTop: 20, marginHorizontal: 10 }]}
+                onPress={()=>this.setState({ email: vendor.email, password: vendor.password }, this.onSignIn)}
+              />
+            )
+          })}
+        </View>
       </View>
     );
   }
