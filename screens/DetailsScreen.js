@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { ScrollView, View, Text, Platform, StyleSheet, TouchableOpacity, ActivityIndicator, AsyncStorage } from 'react-native';
+import { Permissions, Notifications } from 'expo';
 import * as firebase from 'firebase';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Input, Button } from 'react-native-elements';
@@ -83,6 +84,49 @@ class Details extends Component {
     } catch (error) { console.log(error) }
 
     this.setState({ loading: false });
+  }
+
+  async componentDidMount() {
+    this.registerForPushNotificationsAsync();
+  }
+
+  registerForPushNotificationsAsync = async()=> {
+    const { status: existingStatus } = await Permissions.getAsync(
+      Permissions.NOTIFICATIONS
+    );
+    let finalStatus = existingStatus;
+  
+    // only ask if permissions have not already been determined, because
+    // iOS won't necessarily prompt the user a second time.
+    if (existingStatus !== 'granted') {
+      // Android remote notification permissions are granted during the app
+      // install, so this will only ask on iOS
+      const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+      finalStatus = status;
+    }
+  
+    // Stop here if the user did not grant permissions
+    if (finalStatus !== 'granted') {
+      return;
+    }
+  
+    // Get the token that uniquely identifies this device
+    let token = await Notifications.getExpoPushTokenAsync();
+    const userId = await AsyncStorage.getItem('_id');
+    console.log(token);
+    await api.post('pushToken', {
+      pushToken: token,
+      vendor: {
+        vendorname: this.state.name,
+        vendorId: userId
+      }
+    })
+    .then((response) => {
+      console.log(response.data);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
   }
 
   handleAddNew = async () => {
